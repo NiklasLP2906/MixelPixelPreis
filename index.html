@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MixelPreise | Master Edition</title>
+    <title>MixelPreise | Complete Edition</title>
     <style>
         :root {
             --primary: #2563eb; --bg: #0f172a; --card: #1e293b;
@@ -15,24 +15,22 @@
         body { display: flex; flex-direction: column; }
         .top-bar { background: #020617; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 15px; min-height: 0; }
-        header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .search-area { display: flex; gap: 10px; }
         .search-area input { background: var(--card); border: 1px solid var(--border); padding: 12px; border-radius: 8px; color: white; width: 300px; outline: none; }
-        .table-container { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow-y: auto; position: relative; }
+        .table-container { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow-y: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
         thead th { position: sticky; top: 0; background: #2d3a4f; padding: 15px 20px; font-size: 0.7rem; text-transform: uppercase; color: var(--muted); z-index: 10; border-bottom: 2px solid var(--border); cursor: pointer; }
         td { padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         tr:hover { background: #2d3a4f; }
-        .w-ev { width: 150px; } .w-n { width: auto; } .w-p { width: 120px; }
+        .w-ev { width: 150px; } .w-p { width: 120px; }
         .btn { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; transition: 0.2s; }
         .btn-p { background: var(--primary); color: white; }
         .btn-d { background: var(--danger); color: white; }
-        .btn-s { background: #334155; color: white; font-size: 0.75rem; margin-right: 5px; }
+        .btn-s { background: #475569; color: white; font-size: 0.75rem; margin-right: 5px; }
         .btn-add { background: var(--success); color: white; font-size: 0.75rem; margin-right: 5px; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 400px; border: 1px solid var(--border); }
         .modal-content input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0f172a; border: 1px solid var(--border); color: white; border-radius: 8px; }
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -40,26 +38,28 @@
 <div class="top-bar">
     <div id="adminControls" style="display:none">
         <button class="btn btn-add" onclick="openAddModal()">➕ Item hinzufügen</button>
-        <button class="btn btn-s" onclick="exportFullHTML()">💾 HTML speichern</button>
-        <button class="btn btn-d" onclick="resetToCode()">⚙️ Reset (Code-Stand)</button>
+        <button class="btn btn-s" onclick="exportJSON()">💾 Preise Export (JSON)</button>
+        <button class="btn btn-s" onclick="document.getElementById('importFile').click()">📂 Preise Import (JSON)</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)">
+        <button class="btn btn-d" onclick="resetToCode()">⚠️ Reset auf Standard</button>
     </div>
     <div style="flex:1"></div>
     <div id="loginArea">
-        <input type="password" id="pw" placeholder="Passwort..." style="background:#1e293b; border:1px solid #334155; color:white; padding:6px; border-radius:6px;">
+        <input type="password" id="pw" placeholder="Passwort...">
         <button class="btn btn-p" onclick="login()">Login</button>
     </div>
     <div id="adminArea" style="display:none">
-        <span style="color:var(--success); font-weight:bold;">ADMIN</span>
-        <button class="btn btn-d" style="margin-left:15px; padding:5px 10px;" onclick="location.reload()">Logout</button>
+        <span style="color:var(--success); font-weight:bold;">ADMIN MODE</span>
+        <button class="btn btn-d" style="margin-left:15px;" onclick="location.reload()">Logout</button>
     </div>
 </div>
 
 <div class="main-content">
-    <header>
+    <header style="display:flex; justify-content:space-between; align-items:center;">
         <h1 style="margin:0;">Mixel<span style="color:var(--accent)">Preise</span></h1>
         <div class="search-area">
             <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()">
-            <div id="counter" style="background:var(--accent); padding:10px 18px; border-radius:8px; font-weight:bold; min-width:110px; text-align:center;">0 Items</div>
+            <div id="counter" style="background:var(--accent); padding:10px; border-radius:8px; font-weight:bold;">0 Items</div>
         </div>
     </header>
     <div class="table-container">
@@ -67,7 +67,7 @@
             <thead>
                 <tr>
                     <th class="w-ev" onclick="resort('ev')">Event ↕</th>
-                    <th class="w-n" onclick="resort('n')">Gegenstand ↕</th>
+                    <th onclick="resort('n')">Gegenstand ↕</th>
                     <th class="w-p" onclick="resort('buy')">Ankauf ↕</th>
                     <th class="w-p" onclick="resort('sell')">Verkauf ↕</th>
                     <th class="w-p" onclick="resort('markt')">Markt ↕</th>
@@ -82,31 +82,31 @@
 
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h3 id="mTitle" style="margin-top:0; color:var(--accent)">Preis-Update</h3>
+        <h3 id="mTitle" style="color:var(--accent)">Preise anpassen</h3>
         <label>Ankauf ($)</label><input type="number" id="mBuy">
         <label>Verkauf ($)</label><input type="number" id="mSell">
-        <label>Marktpreis ($)</label><input type="number" id="mMarkt">
-        <button class="btn btn-p" style="width:100%;" onclick="save()">Speichern</button>
-        <button class="btn btn-d" style="width:100%; margin-top:10px;" onclick="clearValues()">Werte auf 0 setzen</button>
-        <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('editModal')">Abbrechen</button>
+        <label>Markt ($)</label><input type="number" id="mMarkt">
+        <button class="btn btn-p" style="width:100%" onclick="save()">Speichern</button>
+        <button class="btn btn-d" style="width:100%; margin-top:10px" onclick="clearPrices()">Zahlen löschen (0)</button>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="closeM('editModal')">Abbrechen</button>
     </div>
 </div>
 
 <div id="addModal" class="modal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--success)">Neues Item hinzufügen</h3>
-        <label>Event Name</label><input type="text" id="addEv" placeholder="z.B. Winter 2025">
-        <label>Gegenstand</label><input type="text" id="addN" placeholder="Name des Items">
-        <button class="btn btn-p" style="width:100%;" onclick="addNewItem()">Hinzufügen</button>
-        <button class="btn" style="width:100%; margin-top:10px;" onclick="closeModal('addModal')">Abbrechen</button>
+        <h3>Neues Item hinzufügen</h3>
+        <input type="text" id="addEv" placeholder="Event (z.B. Sommer 2025)">
+        <input type="text" id="addN" placeholder="Gegenstand Name">
+        <button class="btn btn-p" style="width:100%" onclick="addNew()">Hinzufügen</button>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="closeM('addModal')">Abbrechen</button>
     </div>
 </div>
 
-<script id="mainScript">
+<script>
     const ADMIN_PW = "MixelPreisGooner";
     let isAdmin = false, sCol = 'ev', sAsc = true, editIdx = -1;
 
-    // --- DATENSATZ ---
+    // --- DER GROSSE DATENBLOCK (Raw Data) ---
     const rawData = [
         {ev:"Valentinstag 2024", n:"Armors Pfeil", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2024", n:"Valentina", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2024", n:"Blumenstrauß (Kopf)", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2024", n:"Korb voller Rosen (Kopf)", buy:0, sell:0, markt:0},
         {ev:"Valentinstag 2025", n:"Armors Pfeil", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Valentina", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Blumenstrauß", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Pralinen Schachtel", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Luftkuss Kanone", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Blumenstrauß (Kopf)", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Korb voller Rosen (Kopf)", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Pralinen (Kopf)", buy:0, sell:0, markt:0}, {ev:"Valentinstag 2025", n:"Kaninchen Kuscheltier (Kopf)", buy:0, sell:0, markt:0},
@@ -141,106 +141,83 @@
     function login() {
         if(document.getElementById('pw').value === ADMIN_PW) {
             isAdmin = true;
-            document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('adminArea').style.display = 'block';
-            document.getElementById('adminControls').style.display = 'block';
-            document.getElementById('adminTh').style.display = 'table-cell';
+            document.getElementById('loginArea').style.display='none';
+            document.getElementById('adminArea').style.display='block';
+            document.getElementById('adminControls').style.display='block';
+            document.getElementById('adminTh').style.display='table-cell';
             render();
-        } else alert("Passwort falsch!");
+        }
     }
 
     function render() {
         const q = document.getElementById('searchInput').value.toLowerCase();
         const filtered = items.filter(i => i.n.toLowerCase().includes(q) || i.ev.toLowerCase().includes(q));
-        
         filtered.sort((a,b) => {
             let v1 = a[sCol], v2 = b[sCol];
-            if(typeof v1 === 'string') { v1 = v1.toLowerCase(); v2 = v2.toLowerCase(); }
-            if (v1 < v2) return sAsc ? -1 : 1;
-            if (v1 > v2) return sAsc ? 1 : -1;
-            return 0;
+            if(typeof v1==='string'){v1=v1.toLowerCase(); v2=v2.toLowerCase();}
+            return v1 < v2 ? (sAsc?-1:1) : (v1 > v2 ? (sAsc?1:-1) : 0);
         });
-
-        const body = document.getElementById('tableBody');
-        body.innerHTML = filtered.map(i => {
-            const realIdx = items.indexOf(i);
-            const profit = (i.sell || 0) - (i.buy || 0);
+        document.getElementById('tableBody').innerHTML = filtered.map(i => {
+            const idx = items.indexOf(i);
+            const prof = (i.sell||0)-(i.buy||0);
             return `<tr>
-                <td style="color:var(--muted)">${i.ev}</td>
-                <td><strong>${i.n}</strong></td>
-                <td style="color:var(--danger)">${(i.buy||0).toLocaleString()} $</td>
-                <td style="color:var(--primary)">${(i.sell||0).toLocaleString()} $</td>
-                <td style="color:white; font-weight:bold;">${(i.markt||0).toLocaleString()} $</td>
-                <td style="color:${profit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">${profit.toLocaleString()} $</td>
-                ${isAdmin ? `<td>
-                    <button class="btn btn-p" style="padding:4px 8px; font-size:0.7rem;" onclick="openEdit(${realIdx})">EDIT</button>
-                    <button class="btn btn-d" style="padding:4px 8px; font-size:0.7rem;" onclick="deleteItem(${realIdx})">X</button>
-                </td>` : ''}
+                <td>${i.ev}</td><td><strong>${i.n}</strong></td>
+                <td style="color:var(--danger)">${(i.buy||0).toLocaleString()}$</td>
+                <td style="color:var(--primary)">${(i.sell||0).toLocaleString()}$</td>
+                <td style="font-weight:bold">${(i.markt||0).toLocaleString()}$</td>
+                <td style="color:${prof>=0?'var(--success)':'var(--danger)'}">${prof.toLocaleString()}$</td>
+                ${isAdmin?`<td>
+                    <button class="btn btn-p" style="padding:4px 8px;font-size:0.7rem;" onclick="openEdit(${idx})">EDIT</button>
+                    <button class="btn btn-d" style="padding:4px 8px;font-size:0.7rem;" onclick="removeItem(${idx})">X</button>
+                </td>`:''}
             </tr>`;
         }).join('');
         document.getElementById('counter').innerText = filtered.length + " Items";
     }
 
-    function resort(c) { sAsc = (sCol === c) ? !sAsc : true; sCol = c; render(); }
-
-    // Modal Logic
-    function openEdit(i) {
-        editIdx = i;
-        document.getElementById('mTitle').innerText = items[i].n;
-        document.getElementById('mBuy').value = items[i].buy;
-        document.getElementById('mSell').value = items[i].sell;
-        document.getElementById('mMarkt').value = items[i].markt;
-        document.getElementById('editModal').style.display = 'flex';
-    }
-
-    function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function clearValues() { document.getElementById('mBuy').value = 0; document.getElementById('mSell').value = 0; document.getElementById('mMarkt').value = 0; }
-
+    function resort(c) { sAsc = sCol===c?!sAsc:true; sCol=c; render(); }
+    
+    function openEdit(i) { editIdx=i; document.getElementById('mTitle').innerText=items[i].n; document.getElementById('mBuy').value=items[i].buy; document.getElementById('mSell').value=items[i].sell; document.getElementById('mMarkt').value=items[i].markt; document.getElementById('editModal').style.display='flex'; }
+    function openAddModal() { document.getElementById('addModal').style.display='flex'; }
+    function closeM(id) { document.getElementById(id).style.display='none'; }
+    
     function save() {
-        items[editIdx].buy = parseInt(document.getElementById('mBuy').value) || 0;
-        items[editIdx].sell = parseInt(document.getElementById('mSell').value) || 0;
-        items[editIdx].markt = parseInt(document.getElementById('mMarkt').value) || 0;
-        dbSave(); render(); closeModal('editModal');
+        items[editIdx].buy=parseInt(document.getElementById('mBuy').value)||0;
+        items[editIdx].sell=parseInt(document.getElementById('mSell').value)||0;
+        items[editIdx].markt=parseInt(document.getElementById('mMarkt').value)||0;
+        sync(); closeM('editModal');
     }
 
-    function addNewItem() {
+    function clearPrices() { document.getElementById('mBuy').value=0; document.getElementById('mSell').value=0; document.getElementById('mMarkt').value=0; }
+
+    function addNew() {
         const ev = document.getElementById('addEv').value;
         const n = document.getElementById('addN').value;
-        if(ev && n) {
-            items.push({ev, n, buy:0, sell:0, markt:0});
-            dbSave(); render(); closeModal('addModal');
-            document.getElementById('addEv').value = ""; document.getElementById('addN').value = "";
-        } else alert("Bitte Event und Name ausfüllen!");
+        if(ev && n) { items.push({ev, n, buy:0, sell:0, markt:0}); sync(); closeM('addModal'); }
     }
 
-    function deleteItem(i) {
-        if(confirm(`"${items[i].n}" wirklich löschen?`)) {
-            items.splice(i, 1);
-            dbSave(); render();
-        }
+    function removeItem(i) { if(confirm("Dieses Item wirklich löschen?")) { items.splice(i, 1); sync(); } }
+
+    function sync() { localStorage.setItem('mixel_full_db', JSON.stringify(items)); render(); }
+
+    function exportJSON() {
+        const blob = new Blob([JSON.stringify(items, null, 2)], {type: "application/json"});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "mixel_preise.json"; a.click();
     }
 
-    function dbSave() { localStorage.setItem('mixel_db_final_v10', JSON.stringify(items)); }
-    function resetToCode() { if(confirm("Lokale Änderungen löschen und Code-Daten laden?")) { localStorage.removeItem('mixel_db_final_v10'); location.reload(); } }
-
-    function exportFullHTML() {
-        let html = document.documentElement.outerHTML;
-        const marker = "const rawData = [";
-        const parts = html.split(marker);
-        const endPart = parts[1].split("];");
-        const newHTML = parts[0] + marker + "\n        " + JSON.stringify(items, null, 4).slice(1,-1) + "\n    ];" + endPart[1];
-        
-        const blob = new Blob([newHTML], {type: 'text/html'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = "mixel_preise_update.html";
-        a.click();
+    function importJSON(e) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try { items = JSON.parse(ev.target.result); sync(); alert("Geladen!"); } catch(err) { alert("Fehler!"); }
+        };
+        reader.readAsText(e.target.files[0]);
     }
 
-    // Init
-    const stored = localStorage.getItem('mixel_db_final_v10');
-    items = (stored) ? JSON.parse(stored) : [...rawData];
+    function resetToCode() { if(confirm("Alle Änderungen verwerfen und Standard-Liste laden?")) { items = [...rawData]; sync(); } }
+
+    // Start: Erst in LocalStorage schauen, sonst den großen Block nehmen
+    const saved = localStorage.getItem('mixel_full_db');
+    items = saved ? JSON.parse(saved) : [...rawData];
     render();
 </script>
 </body>
